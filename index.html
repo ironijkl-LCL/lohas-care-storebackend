@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOHAS Store 後台管理系統 (核心憲章安全驗證版 v2.3)</title>
+    <title>LOHAS Store 後台管理系統 (三維數據對接版 v16.0)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* 全域樣式：嚴格遵從系統核心憲章（Core Constitution v2.3） */
         :root {
@@ -45,7 +46,7 @@
             padding: 30px;
             text-align: center;
             border-top: 6px solid var(--primary-color);
-            display: block; /* 預設顯示 */
+            display: block;
         }
 
         .login-logo {
@@ -62,16 +63,16 @@
             margin-bottom: 24px;
         }
 
-        /* 💻 後台中央主容器（登入成功前隱藏） */
+        /* 💻 後台中央主容器 */
         .admin-container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 0 auto;
             background-color: var(--bg-color);
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
-            display: none; /* 預設隱藏 */
+            display: none; 
             flex-direction: column;
             align-self: flex-start;
         }
@@ -104,7 +105,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        /* 佈局切換 Tab */
+        /* 📌 三個核心分頁按鈕 */
         .admin-tabs {
             display: flex;
             background: #ECEFF1;
@@ -112,7 +113,7 @@
         }
         .tab-btn {
             flex: 1;
-            padding: 15px;
+            padding: 16px;
             background: none;
             border: none;
             font-size: 15px;
@@ -120,11 +121,11 @@
             color: var(--text-light);
             cursor: pointer;
             transition: all 0.2s;
-            border-bottom: 3px solid transparent;
+            border-bottom: 4px solid transparent;
         }
         .tab-btn.active {
             color: var(--primary-color);
-            border-bottom: 3px solid var(--primary-color);
+            border-bottom: 4px solid var(--primary-color);
             background: var(--white);
         }
 
@@ -135,7 +136,6 @@
         .panel-section { display: none; }
         .panel-section.active { display: block; }
 
-        /* 卡片與表格通用樣式 */
         .card {
             background: var(--white);
             border-radius: 12px;
@@ -154,7 +154,6 @@
             justify-content: space-between;
         }
 
-        /* 表單元素 */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .input-group { margin-bottom: 14px; }
         .input-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--text-dark); text-align: left; }
@@ -169,7 +168,6 @@
         }
         .input-field:focus { border-color: var(--primary-color); }
         
-        /* 憲章標準高度 (48px) 按鈕 */
         .btn-core {
             height: var(--button-height);
             background-color: var(--primary-color);
@@ -179,11 +177,11 @@
             font-size: 15px;
             font-weight: bold;
             cursor: pointer;
-            padding: 0 20px;
+            padding: 0 16px;
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: opacity 0.2s;
         }
         .btn-core:active { opacity: 0.85; }
@@ -191,7 +189,6 @@
         .btn-core.green { background-color: var(--accent-green); }
         .btn-core.blue { background-color: var(--accent-blue); }
         
-        /* 數據表格樣式 */
         .table-responsive { overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
         th, td { padding: 12px; border-bottom: 1px solid #EEF0F2; vertical-align: middle; }
@@ -203,18 +200,35 @@
         .status-verified { background: #E8F5E9; color: #2E7D32; }
         .status-cancelled { background: #FFEBEE; color: #C62828; }
 
-        .receipt-preview-thumbnail { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #CCC; cursor: pointer; }
+        .receipt-preview-thumbnail { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #CCC; cursor: pointer; }
         
-        /* 彈出遮罩層 (檢視入數紙) */
         .admin-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 99999;
             display: none; justify-content: center; align-items: center; padding: 20px;
         }
-        .admin-modal-content {
-            background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 100%; text-align: center;
+        .invoice-modal-content {
+            background: #90A4AE; padding: 15px; border-radius: 14px; max-width: 840px; width: 100%; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
-        .admin-modal-img { max-width: 100%; max-height: 70vh; object-fit: contain; margin-top: 10px; border: 1px solid #DDD; }
+        .invoice-scroll-body {
+            max-height: 75vh; overflow-y: auto; background: white; padding: 10px; border-radius: 8px; display: flex; justify-content: center;
+        }
+
+        /* 📄 A4 發票排版 */
+        .invoice-print-container {
+            background: #FFFFFF; color: #212121; padding: 30px; width: 100%; max-width: 190mm; min-height: 250mm; box-sizing: border-box; font-family: -apple-system, sans-serif; text-align: left;
+        }
+        .inv-header { display: flex; justify-content: space-between; border-bottom: 3px solid #D32F2F; padding-bottom: 15px; margin-bottom: 20px; }
+        .inv-logo { font-size: 26px; font-weight: bold; color: #D32F2F; letter-spacing: 1px; }
+        .inv-meta { text-align: right; font-size: 13px; color: #555; line-height: 1.5; }
+        .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; }
+        .inv-box { background: #F8F9FA; padding: 12px; border-radius: 6px; border-left: 4px solid #FFB300; }
+        .inv-box h4 { margin-bottom: 6px; color: #1E1E24; font-size: 14px; border-bottom: 1px solid #E0E0E0; padding-bottom: 2px; }
+        .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        .inv-table th { background: #212121; color: #FFF; padding: 10px; font-size: 13px; font-weight: bold; }
+        .inv-table td { padding: 10px; border-bottom: 1px solid #E0E0E0; font-size: 13px; color: #212121; }
+        .inv-summary { text-align: right; font-size: 16px; font-weight: bold; color: #D32F2F; padding-top: 10px; border-top: 2px solid #212121; }
+        .inv-footer { text-align: center; border-top: 1px dashed #CCC; padding-top: 15px; margin-top: 40px; font-size: 11px; color: #777; }
     </style>
 </head>
 <body>
@@ -239,7 +253,7 @@
         <header class="admin-header">
             <div class="header-title">
                 <h1>LOHAS Store 實時決策中央後台</h1>
-                <span>核心驗證版 v2.3</span>
+                <span>系統大更新版 v16.0</span>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div id="serverClock" style="font-size: 13px; font-weight: bold; color: var(--secondary-color);">載入中...</div>
@@ -248,31 +262,30 @@
         </header>
 
         <nav class="admin-tabs">
-            <button class="tab-btn active" onclick="switchTab('panel_orders')">📋 訂單實時審核</button>
-            <button class="tab-btn" onclick="switchTab('panel_products')">📦 貨品庫存上架</button>
-            <button class="tab-btn" onclick="switchTab('panel_users')">👥 會員特權變更</button>
-            <button class="tab-btn" onclick="switchTab('panel_config')">⚙️ 收款渠道配置</button>
+            <button class="tab-btn active" id="tab_orders" onclick="switchTab('panel_orders')">📋 1. 訂單編號</button>
+            <button class="tab-btn" id="tab_products" onclick="switchTab('panel_products')">📦 2. 貨品存量</button>
+            <button class="tab-btn" id="tab_users" onclick="switchTab('panel_users')">👥 3. 客人消費額、積分和等級</button>
         </nav>
 
         <main class="admin-content">
-
+            
             <section id="panel_orders" class="panel-section active">
                 <div class="card">
                     <div class="section-title">
-                        <span>📥 顧客線上下單序列 (自動實時重新整理)</span>
+                        <span>📥 線上訂單交易序列 (實時自動同步更新)</span>
                     </div>
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
                                     <th>訂單編號</th>
-                                    <th>時間</th>
-                                    <th>會員UID</th>
+                                    <th>交易時間</th>
                                     <th>送貨地址</th>
-                                    <th>金額</th>
-                                    <th>渠道</th>
-                                    <th>入數紙</th>
-                                    <th>狀態更新</th>
+                                    <th>應付總額</th>
+                                    <th>付款渠道</th>
+                                    <th>轉帳入數紙</th>
+                                    <th>安全狀態核對</th>
+                                    <th>發票管控</th>
                                 </tr>
                             </thead>
                             <tbody id="adminOrdersTableBody">
@@ -281,19 +294,44 @@
                         </table>
                     </div>
                 </div>
+
+                <div class="card">
+                    <div class="section-title">🛠️ 線上收銀台收款資訊配置 (`system_config/payment`)</div>
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label>商戶對接電話號碼</label>
+                            <input type="text" class="input-field" id="confMerchantPhone" placeholder="加載中...">
+                        </div>
+                        <div class="input-group">
+                            <label>PayMe 二維碼圖片網址</label>
+                            <input type="text" class="input-field" id="confPaymeQr" placeholder="加載中...">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label>AlipayHK 支付寶二維碼網址</label>
+                            <input type="text" class="input-field" id="confAlipayQr" placeholder="加載中...">
+                        </div>
+                        <div class="input-group">
+                            <label>轉數快 FPS 二維碼網址</label>
+                            <input type="text" class="input-field" id="confFpsQr" placeholder="加載中...">
+                        </div>
+                    </div>
+                    <button class="btn-core blue" style="margin-top: 5px;" onclick="saveSystemPaymentConfig()">💾 儲存並即時廣播前端二維碼</button>
+                </div>
             </section>
 
             <section id="panel_products" class="panel-section">
                 <div class="grid-2">
                     <div class="card">
-                        <div class="section-title">✨ 上架新零售貨品</div>
+                        <div class="section-title">✨ 上架全新零售貨品</div>
                         <div class="input-group">
-                            <label>商品唯一 ID (不可重複)</label>
+                            <label>商品唯一編號 ID (不可重複)</label>
                             <input type="text" class="input-field" id="newProdId" placeholder="例如: lohas_tea_01">
                         </div>
                         <div class="input-group">
-                            <label>商品名稱</label>
-                            <input type="text" class="input-field" id="newProdName" placeholder="請輸入貨品完整名稱">
+                            <label>商品完整名稱</label>
+                            <input type="text" class="input-field" id="newProdName" placeholder="請輸入貨品名稱">
                         </div>
                         <div class="grid-2">
                             <div class="input-group">
@@ -301,32 +339,32 @@
                                 <input type="number" class="input-field" id="newProdPrice" placeholder="0">
                             </div>
                             <div class="input-group">
-                                <label>初始庫存量</label>
+                                <label>初始建立存量</label>
                                 <input type="number" class="input-field" id="newProdStock" placeholder="100">
                             </div>
                         </div>
                         <div class="input-group">
-                            <label>商品相片網址 (URL / 可留空)</label>
+                            <label>商品圖片網址 (URL / 可留空)</label>
                             <input type="text" class="input-field" id="newProdImg" placeholder="https://...">
                         </div>
-                        <button class="btn-core green" style="width:100%;" onclick="submitNewProduct()">💾 確認上架並發佈至全網</button>
+                        <button class="btn-core green" style="width:100%;" onclick="submitNewProduct()">💾 確認商品上架</button>
                     </div>
 
                     <div class="card">
-                        <div class="section-title">📦 現有上架貨品清單</div>
-                        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                        <div class="section-title">📦 現有商品貨品存量大數據</div>
+                        <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>貨品ID</th>
-                                        <th>名稱</th>
-                                        <th>價格</th>
-                                        <th>目前庫存</th>
-                                        <th>快速補貨</th>
+                                        <th>商品名稱</th>
+                                        <th>單價價格</th>
+                                        <th>現有存量</th>
+                                        <th>快速補貨操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="adminProductsTableBody">
-                                    <tr><td colspan="5" style="text-align:center;">載入庫存中...</td></tr>
+                                    <tr><td colspan="5" style="text-align:center;">載入遠端數據中...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -336,19 +374,19 @@
 
             <section id="panel_users" class="panel-section">
                 <div class="card">
-                    <div class="section-title">👥 全體登記會員大會計</div>
+                    <div class="section-title">👥 全體登記會員大會計 (消費額 · 積分 · 會籍等級管理)</div>
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
                                     <th>會員卡號 (UID)</th>
-                                    <th>姓名</th>
+                                    <th>姓名/暱稱</th>
                                     <th>手機號碼</th>
-                                    <th>會籍級別</th>
-                                    <th>累積消費</th>
-                                    <th>現有積分</th>
-                                    <th>電子印花</th>
-                                    <th>手動調整操作</th>
+                                    <th>現有會籍等級</th>
+                                    <th>累積消費總額</th>
+                                    <th>現有累積積分</th>
+                                    <th>電子印花卡數量</th>
+                                    <th>手動特權微調</th>
                                 </tr>
                             </thead>
                             <tbody id="adminUsersTableBody">
@@ -358,35 +396,66 @@
                     </div>
                 </div>
             </section>
-
-            <section id="panel_config" class="panel-section">
-                <div class="card">
-                    <div class="section-title">🛠️ 線上安全收銀台收款資訊配置 (`system_config/payment`)</div>
-                    <div class="grid-2">
-                        <div class="input-group">
-                            <label>商戶聯絡/轉帳對接電話號碼</label>
-                            <input type="text" class="input-field" id="confMerchantPhone" placeholder="加載中...">
-                        </div>
-                        <div class="input-group">
-                            <label>PayMe 收款碼二維碼圖片網址</label>
-                            <input type="text" class="input-field" id="confPaymeQr" placeholder="加載中...">
-                        </div>
-                    </div>
-                    <div class="grid-2">
-                        <div class="input-group">
-                            <label>AlipayHK 支付寶收款二維碼網址</label>
-                            <input type="text" class="input-field" id="confAlipayQr" placeholder="加載中...">
-                        </div>
-                        <div class="input-group">
-                            <label>轉數快 FPS 收款二維碼網址</label>
-                            <input type="text" class="input-field" id="confFpsQr" placeholder="加載中...">
-                        </div>
-                    </div>
-                    <button class="btn-core blue" style="margin-top: 10px;" onclick="saveSystemPaymentConfig()">💾 儲存並即時更新前端收銀台二維碼</button>
-                </div>
-            </section>
-
         </main>
+    </div>
+
+    <div class="admin-modal" id="invoicePreviewModal" style="align-items: center;">
+        <div class="invoice-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: white;">
+                <h3 style="font-size: 16px;">📄 LOHAS INVOICE 發票即時核對預覽</h3>
+                <span style="font-size: 11px; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;">A4 標準格式</span>
+            </div>
+            <div class="invoice-scroll-body">
+                <div class="invoice-print-container" id="invoicePrintTargetNode">
+                    <div class="inv-header">
+                        <div>
+                            <div class="inv-logo">LOHAS STORE</div>
+                            <div style="font-size:12px; color:#555; margin-top:3px;">樂活智家零售與康復科技系統</div>
+                        </div>
+                        <div class="inv-meta">
+                            <b>官方正式發票 (OFFICIAL INVOICE)</b><br>
+                            發票編號: <span id="invIdText">-</span><br>
+                            列印日期: <span id="invPrintDateText">-</span>
+                        </div>
+                    </div>
+                    <div class="inv-grid">
+                        <div class="inv-box">
+                            <h4>📍 配送物流目的地</h4>
+                            客戶編號: <span id="invUidText">-</span><br>
+                            送貨地址: <span id="invAddressText">-</span>
+                        </div>
+                        <div class="inv-box">
+                            <h4>💳 交易結算明細</h4>
+                            下單時間: <span id="invTimeText">-</span><br>
+                            付款管道: <span id="invMethodText">-</span><br>
+                            核對狀態: <span id="invStatusText">-</span>
+                        </div>
+                    </div>
+                    <table class="inv-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;">商品項目項目</th>
+                                <th style="width:20%; text-align:right;">單價</th>
+                                <th style="width:15%; text-align:center;">數量</th>
+                                <th style="width:25%; text-align:right;">小計</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invItemsTableBody"></tbody>
+                    </table>
+                    <div class="inv-summary">
+                        合計實收總額 (TOTAL): <span id="invTotalAmtText">HK$ 0</span>
+                    </div>
+                    <div class="inv-footer">
+                        此發票由 LOHAS Store 中央雲端系統自動生成 • 謝謝您的惠顧！<br>
+                        如有任何查詢，請致電官方收款核對對接熱線。
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn-core" style="background-color: #37474F;" onclick="closeInvoiceModal()">關閉預覽</button>
+                <button class="btn-core blue" onclick="executeDownloadPDF()">📥 確定下載 PDF 發票</button>
+            </div>
+        </div>
     </div>
 
     <div class="admin-modal" id="imgModal" onclick="closeImgModal()">
@@ -415,8 +484,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 🔑 後台核心防禦密碼 (可自由更改)
         const MASTER_ADMIN_PASSWORD = "LOHAS2026Admin";
+        let globalOrdersCache = {}; 
+        let currentPrintingOrderId = "";
 
         function adminToast(msg) {
             const t = document.getElementById("adminToast");
@@ -424,81 +494,66 @@
             setTimeout(() => t.style.display = "none", 2500);
         }
 
-        // 🔓 執行登入校驗
         window.verifyAdminPassword = function() {
             const inputField = document.getElementById("adminPasswordInput");
             const errorMsg = document.getElementById("loginErrorMsg");
-            
             if(inputField.value === MASTER_ADMIN_PASSWORD) {
                 errorMsg.style.display = "none";
-                // 將登入成功狀態記錄在當前分頁中 (重新整理不丟失)
                 sessionStorage.setItem("lohas_admin_auth", "authenticated");
                 unlockDashboardUI();
             } else {
                 errorMsg.style.display = "block";
-                inputField.value = "";
-                inputField.focus();
+                inputField.value = ""; inputField.focus();
             }
         };
 
-        // 🔓 顯示主介面並加載 Firebase 資料
         function unlockDashboardUI() {
             document.getElementById("adminLoginPanel").style.display = "none";
-            const dash = document.getElementById("adminMainDashboard");
-            dash.style.display = "flex";
-            
-            // 變更 Body 佈局適應後台大框架
+            document.getElementById("adminMainDashboard").style.display = "flex";
             document.body.style.alignItems = "flex-start";
-
-            // 啟動資料庫即時監聽與對接
             initAdminSystem();
         }
 
-        // 🔒 安全登出系統
         window.logOutAdminSystem = function() {
             sessionStorage.removeItem("lohas_admin_auth");
-            location.reload(); // 直接重新整理刷新網頁回復鎖定狀態
+            location.reload();
         };
 
-        // 頁面初次載入安全自動校驗器
         window.addEventListener("DOMContentLoaded", () => {
-            if(sessionStorage.getItem("lohas_admin_auth") === "authenticated") {
-                unlockDashboardUI();
-            } else {
-                document.getElementById("adminPasswordInput").focus();
-            }
+            if(sessionStorage.getItem("lohas_admin_auth") === "authenticated") unlockDashboardUI();
+            else document.getElementById("adminPasswordInput").focus();
         });
 
-        // 時鐘模組
         setInterval(() => {
             document.getElementById("serverClock").innerText = "⏰ 系統時間: " + new Date().toLocaleString('zh-HK');
         }, 1000);
 
-        // 分頁切換功能
         window.switchTab = function(tabId) {
             document.querySelectorAll('.panel-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            
+            // 綁定當前觸發按鈕的高亮樣式
+            if(tabId === 'panel_orders') document.getElementById('tab_orders').classList.add('active');
+            if(tabId === 'panel_products') document.getElementById('tab_products').classList.add('active');
+            if(tabId === 'panel_users') document.getElementById('tab_users').classList.add('active');
         };
 
-        // 🖼️ 視窗放大入數紙
         window.openImgModal = function(src) {
             if(!src || src.trim() === "") { alert("該筆訂單客戶尚未上傳入數紙截圖！"); return; }
             document.getElementById("modalTargetImg").src = src;
             document.getElementById("imgModal").style.display = "flex";
         };
-        window.closeImgModal = function() {
-            document.getElementById("imgModal").style.display = "none";
-        };
+        window.closeImgModal = function() { document.getElementById("imgModal").style.display = "none"; };
 
         /* ==========================================
-           🎯 功能 1: 實時動態監聽線上訂單 (Orders)
+           🎯 分頁 1: 訂單編號監聽與發票處理
            ========================================== */
         function listenToOrders() {
             onSnapshot(collection(db, "orders"), (snapshot) => {
                 const tbody = document.getElementById("adminOrdersTableBody");
                 tbody.innerHTML = "";
+                globalOrdersCache = {}; 
                 
                 if(snapshot.empty) {
                     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-light);">目前雲端資料庫查無任何交易記錄。</td></tr>`;
@@ -507,23 +562,14 @@
 
                 let sortedDocs = [];
                 snapshot.forEach(doc => sortedDocs.push(doc));
-                sortedDocs.sort((a,b) => {
-                    let dateA = a.data().createdAt?.seconds || 0;
-                    let dateB = b.data().createdAt?.seconds || 0;
-                    return dateB - dateA;
-                });
+                sortedDocs.sort((a,b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0));
 
                 sortedDocs.forEach(docSnap => {
                     const orderId = docSnap.id;
                     const o = docSnap.data();
-                    
-                    let timeStr = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleString('zh-HK') : '未知時間';
-                    let statusBadge = "";
-                    if(o.status === "pending_verification") statusBadge = `<span class="status-badge status-pending">待核對過數</span>`;
-                    else if(o.status === "verified_paid") statusBadge = `<span class="status-badge status-verified">✓ 已確認入數</span>`;
-                    else if(o.status === "cancelled") statusBadge = `<span class="status-badge status-cancelled">已取消/失效</span>`;
-                    else statusBadge = `<span class="status-badge" style="background:#E0E0E0;">${o.status}</span>`;
+                    globalOrdersCache[orderId] = o; 
 
+                    let timeStr = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleString('zh-HK') : '未知時間';
                     let receiptHtml = "⚠️ 未上傳";
                     if(o.receiptImgBase64 && o.receiptImgBase64.trim() !== "") {
                         receiptHtml = `<img src="${o.receiptImgBase64}" class="receipt-preview-thumbnail" onclick="openImgModal(this.src)" title='點擊放大核對'>`;
@@ -533,18 +579,20 @@
                         <tr>
                             <td><b>${orderId}</b></td>
                             <td><span style="font-size:11px; color:var(--text-light);">${timeStr}</span></td>
-                            <td><code>${o.uid || '-'}</code></td>
-                            <td><span style="color:#0288D1; font-weight:500;">${o.address || '自取/無'}</span></td>
+                            <td><span style="color:#0288D1; font-weight:500; font-size:12px;">${o.address || '自取/無'}</span></td>
                             <td style="color:var(--primary-color); font-weight:bold;">HK$ ${o.total || 0}</td>
                             <td><span style="font-size:11px;">${o.paymentMethod || 'PayMe'}</span></td>
                             <td style="text-align:center;">${receiptHtml}</td>
                             <td>
                                 <select class="input-field" style="height:32px; font-size:12px; padding:0 4px; width:110px;" onchange="updateOrderStatus('${orderId}', this.value)">
-                                    <option value="" disabled selected>變更：${statusBadge}</option>
+                                    <option value="" disabled selected>變更：${o.status === "pending_verification" ? "待核對" : o.status === "verified_paid" ? "已入數" : "已取消"}</option>
                                     <option value="pending_verification">待核對過數</option>
                                     <option value="verified_paid">✓ 確認已過數</option>
                                     <option value="cancelled">❌ 取消此訂單</option>
                                 </select>
+                            </td>
+                            <td>
+                                <button class="btn-core secondary" style="height:30px; font-size:11px; padding:0 8px;" onclick="previewInvoiceModal('${orderId}')">🔍 預覽/列印</button>
                             </td>
                         </tr>
                     `;
@@ -559,16 +607,75 @@
             } catch (err) { alert("更新失敗: " + err.message); }
         };
 
+        window.previewInvoiceModal = function(orderId) {
+            const o = globalOrdersCache[orderId];
+            if(!o) { alert("找不到該訂單快取數據！"); return; }
+            currentPrintingOrderId = orderId;
+
+            document.getElementById("invIdText").innerText = orderId;
+            document.getElementById("invPrintDateText").innerText = new Date().toLocaleString('zh-HK');
+            document.getElementById("invUidText").innerText = o.uid || '普通散客';
+            document.getElementById("invAddressText").innerText = o.address || '無指定地址 (到店自取)';
+            document.getElementById("invTimeText").innerText = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleString('zh-HK') : '未知時間';
+            document.getElementById("invMethodText").innerText = o.paymentMethod || '線上金流';
+            
+            let statusText = "待核對過數";
+            if(o.status === "verified_paid") statusText = "已確認入數 (PAID)";
+            else if(o.status === "cancelled") statusText = "交易取消 (CANCELLED)";
+            document.getElementById("invStatusText").innerText = statusText;
+            document.getElementById("invTotalAmtText").innerText = "HK$ " + (o.total || 0);
+
+            const itemsTbody = document.getElementById("invItemsTableBody");
+            itemsTbody.innerHTML = "";
+            if(o.items && o.items.length > 0) {
+                o.items.forEach(item => {
+                    itemsTbody.innerHTML += `
+                        <tr>
+                            <td><b>📦 ${item.name}</b> <br><small style="color:#666; font-size:10px;">貨品編號: ${item.id}</small></td>
+                            <td style="text-align:right;">HK$ ${item.price}</td>
+                            <td style="text-align:center;">${item.qty}</td>
+                            <td style="text-align:right; font-weight:bold;">HK$ ${item.price * item.qty}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                itemsTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">無商品明細項目</td></tr>`;
+            }
+
+            document.getElementById("invoicePreviewModal").style.display = "flex";
+        };
+
+        window.closeInvoiceModal = function() {
+            document.getElementById("invoicePreviewModal").style.display = "none";
+        };
+
+        window.executeDownloadPDF = function() {
+            if(!currentPrintingOrderId) return;
+            const element = document.getElementById("invoicePrintTargetNode");
+            const opt = {
+                margin:       [12, 12, 12, 12],
+                filename:     `LOHAS_INVOICE_${currentPrintingOrderId}.pdf`,
+                image:        { type: 'jpeg', quality: 1.0 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            adminToast(`⏳ 正在將發票編譯為 A4 PDF...`);
+            html2pdf().set(opt).from(element).save().then(() => {
+                closeInvoiceModal();
+                adminToast(`✓ 發票 PDF 已成功下載至您的裝置`);
+            }).catch(err => { alert("發票 PDF 生成失敗: " + err); });
+        };
+
         /* ==========================================
-           🎯 功能 2: 零售商品庫存管理與即時補貨
+           🎯 分頁 2: 貨品存量與即時補貨
            ========================================== */
         function listenToProducts() {
             onSnapshot(collection(db, "products"), (snapshot) => {
                 const tbody = document.getElementById("adminProductsTableBody");
                 tbody.innerHTML = "";
                 snapshot.forEach(docSnap => {
-                    const pId = docSnap.id;
-                    const p = docSnap.data();
+                    const pId = docSnap.id; const p = docSnap.data();
                     tbody.innerHTML += `
                         <tr>
                             <td><code>${pId}</code></td>
@@ -588,10 +695,10 @@
         window.addStock = async function(pId, currentStock) {
             const inputVal = document.getElementById(`replenish_${pId}`).value;
             if(!inputVal || isNaN(inputVal)) return;
-            const amtToAdd = parseInt(inputVal);
             try {
-                await updateDoc(doc(db, "products", pId), { stock: currentStock + amtToAdd });
+                await updateDoc(doc(db, "products", pId), { stock: currentStock + parseInt(inputVal) });
                 adminToast(`貨品庫存已成功補給！`);
+                document.getElementById(`replenish_${pId}`).value = "";
             } catch (err) { alert(err.message); }
         };
 
@@ -608,31 +715,27 @@
             try {
                 await setDoc(doc(db, "products", id), { name, price, stock, img });
                 adminToast(`✨ 商品【${name}】全新安全上架雲端！`);
-                document.getElementById("newProdId").value = "";
-                document.getElementById("newProdName").value = "";
-                document.getElementById("newProdPrice").value = "";
-                document.getElementById("newProdStock").value = "";
-                document.getElementById("newProdImg").value = "";
+                document.getElementById("newProdId").value = ""; document.getElementById("newProdName").value = "";
+                document.getElementById("newProdPrice").value = ""; document.getElementById("newProdStock").value = ""; document.getElementById("newProdImg").value = "";
             } catch(e) { alert(e.message); }
         };
 
         /* ==========================================
-           🎯 功能 3: 會員大數據審查與積分修正
+           🎯 分頁 3: 客人消費額、積分和等級
            ========================================== */
         function listenToUsers() {
             onSnapshot(collection(db, "users"), (snapshot) => {
                 const tbody = document.getElementById("adminUsersTableBody");
                 tbody.innerHTML = "";
                 snapshot.forEach(docSnap => {
-                    const uid = docSnap.id;
-                    const u = docSnap.data();
+                    const uid = docSnap.id; const u = docSnap.data();
                     tbody.innerHTML += `
                         <tr>
                             <td><code>${uid}</code></td>
                             <td><b>${u.name || '測試會員'}</b></td>
                             <td>${u.phone || '-'}</td>
                             <td><span style="color:#FF7043; font-weight:bold;">${u.level || '普通會員'}</span></td>
-                            <td>HK$ ${Number(u.totalSpent || 0).toLocaleString()}</td>
+                            <td style="font-weight: 500;">HK$ ${Number(u.totalSpent || 0).toLocaleString()}</td>
                             <td style="color:var(--accent-green); font-weight:bold;">${Number(u.points || 0).toLocaleString()} pts</td>
                             <td style="color:var(--secondary-color); font-weight:bold;">★ ${u.stamps || 0} / 10</td>
                             <td>
@@ -666,7 +769,7 @@
         };
 
         /* ==========================================
-           🎯 功能 4: 系統配置初始化
+           ⚙️ 收款渠道金流底層配置提取
            ========================================== */
         async function fetchSystemPaymentConfig() {
             try {
@@ -678,29 +781,23 @@
                     document.getElementById("confAlipayQr").value = c.alipayQrUrl || "";
                     document.getElementById("confFpsQr").value = c.fpsQrUrl || "";
                 }
-            } catch(err) { console.error("加載系統配置發生錯誤:", err); }
+            } catch(err) { console.error(err); }
         }
 
         window.saveSystemPaymentConfig = async function() {
-            const merchantPhone = document.getElementById("confMerchantPhone").value.trim();
-            const paymeQrUrl = document.getElementById("confPaymeQr").value.trim();
-            const alipayQrUrl = document.getElementById("confAlipayQr").value.trim();
-            const fpsQrUrl = document.getElementById("confFpsQr").value.trim();
-
             try {
                 await setDoc(doc(db, "system_config", "payment"), {
-                    merchantPhone, paymeQrUrl, alipayQrUrl, fpsQrUrl
+                    merchantPhone: document.getElementById("confMerchantPhone").value.trim(),
+                    paymeQrUrl: document.getElementById("confPaymeQr").value.trim(),
+                    alipayQrUrl: document.getElementById("confAlipayQr").value.trim(),
+                    fpsQrUrl: document.getElementById("confFpsQr").value.trim()
                 }, { merge: true });
                 adminToast("⚙️ 收款渠道配置成功，已即時廣播至所有用戶終端！");
             } catch(e) { alert("儲存配置失敗: " + e.message); }
         };
 
-        // 系統啟動總入口（解鎖成功後才會呼叫）
         function initAdminSystem() {
-            listenToOrders();
-            listenToProducts();
-            listenToUsers();
-            fetchSystemPaymentConfig();
+            listenToOrders(); listenToProducts(); listenToUsers(); fetchSystemPaymentConfig();
         }
     </script>
 </body>
