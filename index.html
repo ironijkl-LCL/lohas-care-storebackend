@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOHAS Store 後台管理系統 (核心憲章對接版 v2.3)</title>
+    <style>
+        /* 全域樣式：嚴格遵從系統核心憲章（Core Constitution v2.3） */
+        :root {
+            --primary-color: #D32F2F;      /* 核心憲章指定：鮮明紅色 */
+            --secondary-color: #FFB300;    /* 核心憲章指定：活力黃色 */
+            --bg-color: #F4F6F8;           /* 柔和底色 */
+            --text-dark: #212121;
+            --text-light: #666666;
+            --white: #FFFFFF;
+            --button-height: 48px;         /* 核心憲章指定：標準高點擊度按鈕高度 */
+            --accent-green: #2E7D32;       /* 成功提示色 */
+            --accent-blue: #0288D1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #1E1E24;
+            color: var(--text-dark);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--bg-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header class="admin-header" {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--secondary-color);
+        }
+
+        .header-title h1 { font-size: 22px; font-weight: bold; }
+        .header-title span { font-size: 12px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 6px; margin-left: 10px; }
+
+        .toast-msg {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 99999;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* 佈局切換 Tab */
+        .admin-tabs {
+            display: flex;
+            background: #ECEFF1;
+            border-bottom: 1px solid #CFD8DC;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            background: var(--white);
+        }
+
+        .admin-content {
+            padding: 20px;
+            min-height: 500px;
+        }
+        .panel-section { display: none; }
+        .panel-section.active { display: block; }
+
+        /* 卡片與表格通用樣式 */
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            border: 1px solid #EAEAEA;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 表單元素 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--text-dark); }
+        .input-field {
+            width: 100%;
+            height: 42px;
+            border: 1.5px solid #B0BEC5;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+        }
+        .input-field:focus { border-color: var(--primary-color); }
+        
+        /* 憲章按骨架按鈕 */
+        .btn-core {
+            height: var(--button-height);
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 20px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-core.secondary { background-color: var(--secondary-color); color: var(--text-dark); }
+        .btn-core.green { background-color: var(--accent-green); }
+        .btn-core.blue { background-color: var(--accent-blue); }
+        
+        /* 數據表格樣式 */
+        .table-responsive { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th, td { padding: 12px; border-bottom: 1px solid #EEF0F2; vertical-align: middle; }
+        th { background: #F0F2F5; font-weight: bold; color: var(--text-dark); }
+        tr:hover { background: #F9FAFB; }
+
+        /* 狀態標籤 */
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .status-pending { background: #FFF8E1; color: #F57F17; }
+        .status-verified { background: #E8F5E9; color: #2E7D32; }
+        .status-cancelled { background: #FFEBEE; color: #C62828; }
+
+        /* 圖片預覽器 */
+        .receipt-preview-thumbnail { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #CCC; cursor: pointer; }
+        
+        /* 彈出遮罩層 (檢視入數紙) */
+        .admin-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 99999;
+            display: none; justify-content: center; align-items: center; padding: 20px;
+        }
+        .admin-modal-content {
+            background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 100%; text-align: center;
+        }
+        .admin-modal-img { max-width: 100%; max-height: 70vh; object-fit: contain; margin-top: 10px; border: 1px solid #DDD; }
+    </style>
+</head>
+<body>
+
+    <div class="toast-msg" id="adminToast">管理控制台提示</div>
+
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="header-title">
+                <h1>LOHAS Store 實時決策中央後台 </h1>
+                <span>憲章完美對接版 v2.3</span>
+            </div>
+            <div id="serverClock" style="font-size: 14px; font-weight: bold; color: var(--secondary-color);">載入系統時間中...</div>
+        </header>
+
+        <nav class="admin-tabs">
+            <button class="tab-btn active" onclick="switchTab('panel_orders')">📋 訂單實時審核</button>
+            <button class="tab-btn" onclick="switchTab('panel_products')">📦 貨品庫存上架</button>
+            <button class="tab-btn" onclick="switchTab('panel_users')">👥 會員特權變更</button>
+            <button class="tab-btn" onclick="switchTab('panel_config')">⚙️ 收款渠道配置</button>
+        </nav>
+
+        <main class="admin-content">
+
+            <section id="panel_orders" class="panel-section active">
+                <div class="card">
+                    <div class="section-title">
+                        <span>📥 顧客線上下單序列 (自動實時重新整理)</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>訂單編號</th>
+                                    <th>時間</th>
+                                    <th>會員UID</th>
+                                    <th>送貨地址</th>
+                                    <th>金額</th>
+                                    <th>渠道</th>
+                                    <th>入數紙</th>
+                                    <th>狀態更新</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminOrdersTableBody">
+                                <tr><td colspan="8" style="text-align:center; color:var(--text-light);">正在連線至遠端訂單資料庫...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="panel_products" class="panel-section">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="section-title">✨ 上架新零售貨品</div>
+                        <div class="input-group">
+                            <label>商品唯一 ID (字母或數字，不可重複)</label>
+                            <input type="text" class="input-field" id="newProdId" placeholder="例如: lohas_tea_01">
+                        </div>
+                        <div class="input-group">
+                            <label>商品名稱</label>
+                            <input type="text" class="input-field" id="newProdName" placeholder="請輸入貨品完整名稱">
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>零售價 (HK$)</label>
+                                <input type="number" class="input-field" id="newProdPrice" placeholder="0">
+                            </div>
+                            <div class="input-group">
+                                <label>初始庫存量</label>
+                                <input type="number" class="input-field" id="newProdStock" placeholder="100">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>商品相片網址 (URL / 可留空使用預設圖)</label>
+                            <input type="text" class="input-field" id="newProdImg" placeholder="https://...">
+                        </div>
+                        <button class="btn-core green" style="width:100%;" onclick="submitNewProduct()">💾 確認上架並發佈至全網</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="section-title">📦 現有上架貨品清單</div>
+                        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>貨品ID</th>
+                                        <th>名稱</th>
+                                        <th>價格</th>
+                                        <th>目前庫存</th>
+                                        <th>快速補貨</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminProductsTableBody">
+                                    <tr><td colspan="5" style="text-align:center;">載入庫存中...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="panel_users" class="panel-section">
+                <div class="card">
+                    <div class="section-title">👥 全體登記會員大會計</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>會員卡號 (UID)</th>
+                                    <th>姓名</th>
+                                    <th>手機號碼</th>
+                                    <th>會籍級別</th>
+                                    <th>累積消費</th>
+                                    <th>現有積分</th>
+                                    <th>電子印花</th>
+                                    <th>手動調整操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody">
+                                <tr><td colspan="8" style="text-align:center;">正在載入會員核心權益檔案...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="panel_config" class="panel-section">
+                <div class="card">
+                    <div class="section-title">🛠️ 線上安全收銀台收款資訊配置 (`system_config/payment`)</div>
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label>商戶聯絡/轉帳對接電話號碼</label>
+                            <input type="text" class="input-field" id="confMerchantPhone" placeholder="加載中...">
+                        </div>
+                        <div class="input-group">
+                            <label>PayMe 收款碼二維碼圖片網址 (可放入 Base64)</label>
+                            <input type="text" class="input-field" id="confPaymeQr" placeholder="加載中...">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label>AlipayHK 支付寶收款二維碼網址</label>
+                            <input type="text" class="input-field" id="confAlipayQr" placeholder="加載中...">
+                        </div>
+                        <div class="input-group">
+                            <label>轉數快 FPS 收款二維碼網址</label>
+                            <input type="text" class="input-field" id="confFpsQr" placeholder="加載中...">
+                        </div>
+                    </div>
+                    <button class="btn-core blue" style="margin-top: 10px;" onclick="saveSystemPaymentConfig()">💾 儲存並即時更新前端收銀台二維碼</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div class="admin-modal" id="imgModal" onclick="closeImgModal()">
+        <div class="admin-modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom: 10px;">📸 客戶付款入數紙原圖預覽</h3>
+            <img src="" class="admin-modal-img" id="modalTargetImg">
+            <br>
+            <button class="btn-core" style="height:36px; margin-top:15px; background:#333;" onclick="closeImgModal()">關閉預覽</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+        // 與你的 LOHAS Store 完全共用同一套安全金鑰與專案群
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnJJJmVSVGfTH92nDf51Ll9QoG1MKzTKM",
+            authDomain: "lohas-care-store.firebaseapp.com",
+            projectId: "lohas-care-store",
+            storageBucket: "lohas-care-store.firebasestorage.app",
+            messagingSenderId: "970651060891",
+            appId: "1:970651060891:web:120106ff499585a0ecd43e",
+            measurementId: "G-9066Q2X494"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function adminToast(msg) {
+            const t = document.getElementById("adminToast");
+            t.innerText = msg; t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 2500);
+        }
+
+        // 時鐘模組
+        setInterval(() => {
+            document.getElementById("serverClock").innerText = "💻 控制台時間: " + new Date().toLocaleString('zh-HK');
+        }, 1000);
+
+        // 分頁切換功能
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.panel-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        };
+
+        // 🖼️ 視窗放大入數紙
+        window.openImgModal = function(src) {
+            if(!src || src.trim() === "") { alert("該筆訂單客戶尚未上傳入數紙截圖！"); return; }
+            document.getElementById("modalTargetImg").src = src;
+            document.getElementById("imgModal").style.display = "flex";
+        };
+        window.closeImgModal = function() {
+            document.getElementById("imgModal").style.display = "none";
+        };
+
+        /* ==========================================
+           🎯 功能 1: 實時動態監聽線上訂單 (Orders)
+           ========================================== */
+        function listenToOrders() {
+            onSnapshot(collection(db, "orders"), (snapshot) => {
+                const tbody = document.getElementById("adminOrdersTableBody");
+                tbody.innerHTML = "";
+                
+                if(snapshot.empty) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-light);">目前雲端資料庫查無任何交易記錄。</td></tr>`;
+                    return;
+                }
+
+                // 排序：最新的訂單置頂
+                let sortedDocs = [];
+                snapshot.forEach(doc => sortedDocs.push(doc));
+                sortedDocs.sort((a,b) => {
+                    let dateA = a.data().createdAt?.seconds || 0;
+                    let dateB = b.data().createdAt?.seconds || 0;
+                    return dateB - dateA;
+                });
+
+                sortedDocs.forEach(docSnap => {
+                    const orderId = docSnap.id;
+                    const o = docSnap.data();
+                    
+                    let timeStr = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleString('zh-HK') : '未知時間';
+                    let statusBadge = "";
+                    if(o.status === "pending_verification") statusBadge = `<span class="status-badge status-pending">待核對過數</span>`;
+                    else if(o.status === "verified_paid") statusBadge = `<span class="status-badge status-verified">✓ 已確認入數</span>`;
+                    else if(o.status === "cancelled") statusBadge = `<span class="status-badge status-cancelled">已取消/失效</span>`;
+                    else statusBadge = `<span class="status-badge" style="background:#E0E0E0;">${o.status}</span>`;
+
+                    // 處理入數紙縮圖
+                    let receiptHtml = "⚠️ 未上傳";
+                    if(o.receiptImgBase64 && o.receiptImgBase64.trim() !== "") {
+                        receiptHtml = `<img src="${o.receiptImgBase64}" class="receipt-preview-thumbnail" onclick="openImgModal(this.src)" title='點擊放大核對'>`;
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b>${orderId}</b></td>
+                            <td><span style="font-size:11px; color:var(--text-light);">${timeStr}</span></td>
+                            <td><code>${o.uid || '-'}</code></td>
+                            <td><span style="color:#0288D1; font-weight:500;">${o.address || '自取/無'}</span></td>
+                            <td style="color:var(--primary-color); font-weight:bold;">HK$ ${o.total || 0}</td>
+                            <td><span style="font-size:11px;">${o.paymentMethod || 'PayMe'}</span></td>
+                            <td style="text-align:center;">${receiptHtml}</td>
+                            <td>
+                                <select class="input-field" style="height:32px; font-size:12px; padding:0 4px; width:110px;" onchange="updateOrderStatus('${orderId}', this.value)">
+                                    <option value="" disabled selected>變更：${statusBadge}</option>
+                                    <option value="pending_verification">待核對過數</option>
+                                    <option value="verified_paid">✓ 確認已過數</option>
+                                    <option value="cancelled">❌ 取消此訂單</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        window.updateOrderStatus = async function(orderId, newStatus) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: newStatus });
+                adminToast(`訂單 ${orderId} 狀態已成功變更！`);
+            } catch (err) { alert("更新失敗: " + err.message); }
+        };
+
+        /* ==========================================
+           🎯 功能 2: 零售商品庫存管理與即時補貨
+           ========================================== */
+        function listenToProducts() {
+            onSnapshot(collection(db, "products"), (snapshot) => {
+                const tbody = document.getElementById("adminProductsTableBody");
+                tbody.innerHTML = "";
+                snapshot.forEach(docSnap => {
+                    const pId = docSnap.id;
+                    const p = docSnap.data();
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><code>${pId}</code></td>
+                            <td><b>${p.name || '未命名'}</b></td>
+                            <td style="color:var(--primary-color); font-weight:bold;">HK$ ${p.price || 0}</td>
+                            <td style="font-weight:bold; color:${(p.stock || 0) < 5 ? 'red' : 'var(--text-dark)'}">${p.stock || 0} 件</td>
+                            <td>
+                                <input type="number" class="input-field" id="replenish_${pId}" placeholder="數量" style="width:60px; height:28px; display:inline-block; margin-right:4px;">
+                                <button class="btn-core" style="height:28px; padding:0 8px; font-size:11px;" onclick="addStock('${pId}', ${p.stock || 0})">補貨</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        window.addStock = async function(pId, currentStock) {
+            const inputVal = document.getElementById(`replenish_${pId}`).value;
+            if(!inputVal || isNaN(inputVal)) return;
+            const amtToAdd = parseInt(inputVal);
+            try {
+                await updateDoc(doc(db, "products", pId), { stock: currentStock + amtToAdd });
+                adminToast(`貨品庫存已成功補給！`);
+            } catch (err) { alert(err.message); }
+        };
+
+        window.submitNewProduct = async function() {
+            const id = document.getElementById("newProdId").value.trim();
+            const name = document.getElementById("newProdName").value.trim();
+            const price = Number(document.getElementById("newProdPrice").value);
+            const stock = Number(document.getElementById("newProdStock").value);
+            let img = document.getElementById("newProdImg").value.trim();
+
+            if(!id || !name || isNaN(price) || isNaN(stock)) { alert("請完整填寫商品上架基礎資料欄位！"); return; }
+            if(!img) img = `https://picsum.photos/seed/${id}/300/200`;
+
+            try {
+                await setDoc(doc(db, "products", id), { name, price, stock, img });
+                adminToast(`✨ 商品【${name}】全新安全上架雲端！`);
+                document.getElementById("newProdId").value = "";
+                document.getElementById("newProdName").value = "";
+                document.getElementById("newProdPrice").value = "";
+                document.getElementById("newProdStock").value = "";
+                document.getElementById("newProdImg").value = "";
+            } catch(e) { alert(e.message); }
+        };
+
+        /* ==========================================
+           🎯 功能 3: 會員大數據審查與積分修正
+           ========================================== */
+        function listenToUsers() {
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                const tbody = document.getElementById("adminUsersTableBody");
+                tbody.innerHTML = "";
+                snapshot.forEach(docSnap => {
+                    const uid = docSnap.id;
+                    const u = docSnap.data();
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><code>${uid}</code></td>
+                            <td><b>${u.name || '測試會員'}</b></td>
+                            <td>${u.phone || '-'}</td>
+                            <td><span style="color:#FF7043; font-weight:bold;">${u.level || '普通會員'}</span></td>
+                            <td>HK$ ${Number(u.totalSpent || 0).toLocaleString()}</td>
+                            <td style="color:var(--accent-green); font-weight:bold;">${Number(u.points || 0).toLocaleString()} pts</td>
+                            <td style="color:var(--secondary-color); font-weight:bold;">★ ${u.stamps || 0} / 10</td>
+                            <td>
+                                <button class="btn-core" style="height:28px; padding:0 6px; font-size:11px; background:#455A64;" onclick="tweakUserPoints('${uid}', ${u.points || 0})">改積分</button>
+                                <button class="btn-core" style="height:28px; padding:0 6px; font-size:11px; background:#FF5722;" onclick="tweakUserStamps('${uid}', ${u.stamps || 0})">改印花</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        window.tweakUserPoints = async function(uid, currentPoints) {
+            const p = prompt(`請輸入調整後的全新累積積分總量 (目前: ${currentPoints}):`, currentPoints);
+            if(p === null || isNaN(p)) return;
+            try {
+                await updateDoc(doc(db, "users", uid), { points: Number(p) });
+                adminToast(`會員 ${uid} 積分調控完畢`);
+            } catch(e) { alert(e.message); }
+        };
+
+        window.tweakUserStamps = async function(uid, currentStamps) {
+            const s = prompt(`請輸入調整後的電子印花個數 [0 - 10 範圍內] (目前: ${currentStamps}):`, currentStamps);
+            if(s === null || isNaN(s)) return;
+            let val = parseInt(s);
+            if(val > 10) val = 10; if(val < 0) val = 0;
+            try {
+                await updateDoc(doc(db, "users", uid), { stamps: val });
+                adminToast(`會員 ${uid} 印花收集章同步完畢`);
+            } catch(e) { alert(e.message); }
+        };
+
+        /* ==========================================
+           🎯 功能 4: 系統核心收銀台二維碼動態配置
+           ========================================== */
+        async function fetchSystemPaymentConfig() {
+            try {
+                const docSnap = await getDoc(doc(db, "system_config", "payment"));
+                if(docSnap.exists()) {
+                    const c = docSnap.data();
+                    document.getElementById("confMerchantPhone").value = c.merchantPhone || "91234567";
+                    document.getElementById("confPaymeQr").value = c.paymeQrUrl || "";
+                    document.getElementById("confAlipayQr").value = c.alipayQrUrl || "";
+                    document.getElementById("confFpsQr").value = c.fpsQrUrl || "";
+                }
+            } catch(err) { console.error("加載系統配置發生錯誤:", err); }
+        }
+
+        window.saveSystemPaymentConfig = async function() {
+            const merchantPhone = document.getElementById("confMerchantPhone").value.trim();
+            const paymeQrUrl = document.getElementById("confPaymeQr").value.trim();
+            const alipayQrUrl = document.getElementById("confAlipayQr").value.trim();
+            const fpsQrUrl = document.getElementById("confFpsQr").value.trim();
+
+            try {
+                await setDoc(doc(db, "system_config", "payment"), {
+                    merchantPhone, paymeQrUrl, alipayQrUrl, fpsQrUrl
+                }, { merge: true });
+                adminToast("⚙️ 收款渠道配置成功，已即時廣播至所有用戶終端！");
+            } catch(e) { alert("儲存配置失敗: " + e.message); }
+        };
+
+        // 系統啟動總入口
+        function initAdminSystem() {
+            listenToOrders();
+            listenToProducts();
+            listenToUsers();
+            fetchSystemPaymentConfig();
+        }
+
+        initAdminSystem();
+    </script>
+</body>
+</html>
