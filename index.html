@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOHAS Store 後台管理系統 (核心憲章對接版 v2.3)</title>
+    <title>LOHAS Store 後台管理系統 (核心憲章安全驗證版 v2.3)</title>
     <style>
         /* 全域樣式：嚴格遵從系統核心憲章（Core Constitution v2.3） */
         :root {
@@ -30,20 +30,53 @@
             color: var(--text-dark);
             padding: 20px;
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
+        /* 🔒 登入密碼頁面樣式 */
+        .login-overlay {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            padding: 30px;
+            text-align: center;
+            border-top: 6px solid var(--primary-color);
+            display: block; /* 預設顯示 */
+        }
+
+        .login-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .login-subtitle {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 24px;
+        }
+
+        /* 💻 後台中央主容器（登入成功前隱藏） */
         .admin-container {
+            width: 100%;
             max-width: 1200px;
             margin: 0 auto;
             background-color: var(--bg-color);
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
-            display: flex;
+            display: none; /* 預設隱藏 */
             flex-direction: column;
+            align-self: flex-start;
         }
 
-        header class="admin-header" {
+        .admin-header {
             background-color: var(--primary-color);
             color: var(--white);
             padding: 20px;
@@ -123,9 +156,8 @@
 
         /* 表單元素 */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
         .input-group { margin-bottom: 14px; }
-        .input-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--text-dark); }
+        .input-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--text-dark); text-align: left; }
         .input-field {
             width: 100%;
             height: 42px;
@@ -137,7 +169,7 @@
         }
         .input-field:focus { border-color: var(--primary-color); }
         
-        /* 憲章按骨架按鈕 */
+        /* 憲章標準高度 (48px) 按鈕 */
         .btn-core {
             height: var(--button-height);
             background-color: var(--primary-color);
@@ -152,7 +184,9 @@
             justify-content: center;
             align-items: center;
             gap: 8px;
+            transition: opacity 0.2s;
         }
+        .btn-core:active { opacity: 0.85; }
         .btn-core.secondary { background-color: var(--secondary-color); color: var(--text-dark); }
         .btn-core.green { background-color: var(--accent-green); }
         .btn-core.blue { background-color: var(--accent-blue); }
@@ -164,13 +198,11 @@
         th { background: #F0F2F5; font-weight: bold; color: var(--text-dark); }
         tr:hover { background: #F9FAFB; }
 
-        /* 狀態標籤 */
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; }
         .status-pending { background: #FFF8E1; color: #F57F17; }
         .status-verified { background: #E8F5E9; color: #2E7D32; }
         .status-cancelled { background: #FFEBEE; color: #C62828; }
 
-        /* 圖片預覽器 */
         .receipt-preview-thumbnail { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #CCC; cursor: pointer; }
         
         /* 彈出遮罩層 (檢視入數紙) */
@@ -187,15 +219,32 @@
 </head>
 <body>
 
-    <div class="toast-msg" id="adminToast">管理控制台提示</div>
+    <div class="toast-msg" id="adminToast">提示訊息</div>
 
-    <div class="admin-container">
+    <div class="login-overlay" id="adminLoginPanel">
+        <div class="login-logo">LOHAS CARE</div>
+        <div class="login-subtitle">中央決策管理控制台認證安全鎖</div>
+        
+        <div class="input-group" style="margin-bottom: 20px;">
+            <label for="adminPasswordInput">🔐 請輸入管理員安全認證金鑰</label>
+            <input type="password" class="input-field" id="adminPasswordInput" placeholder="請輸入密碼" style="text-align: center; letter-spacing: 4px; font-weight: bold;" onkeyup="if(event.key==='Enter')verifyAdminPassword()">
+        </div>
+        
+        <button class="btn-core" style="width: 100%; background-color: var(--primary-color);" onclick="verifyAdminPassword()">安全解鎖進入系統</button>
+        <div id="loginErrorMsg" style="color: var(--primary-color); font-size: 12px; margin-top: 10px; font-weight: bold; display: none;">⚠️ 認證密碼錯誤，請重新輸入！</div>
+    </div>
+
+
+    <div class="admin-container" id="adminMainDashboard">
         <header class="admin-header">
             <div class="header-title">
-                <h1>LOHAS Store 實時決策中央後台 </h1>
-                <span>憲章完美對接版 v2.3</span>
+                <h1>LOHAS Store 實時決策中央後台</h1>
+                <span>核心驗證版 v2.3</span>
             </div>
-            <div id="serverClock" style="font-size: 14px; font-weight: bold; color: var(--secondary-color);">載入系統時間中...</div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div id="serverClock" style="font-size: 13px; font-weight: bold; color: var(--secondary-color);">載入中...</div>
+                <button class="btn-core" style="height: 32px; padding: 0 12px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);" onclick="logOutAdminSystem()">🔒 安全登出</button>
+            </div>
         </header>
 
         <nav class="admin-tabs">
@@ -239,7 +288,7 @@
                     <div class="card">
                         <div class="section-title">✨ 上架新零售貨品</div>
                         <div class="input-group">
-                            <label>商品唯一 ID (字母或數字，不可重複)</label>
+                            <label>商品唯一 ID (不可重複)</label>
                             <input type="text" class="input-field" id="newProdId" placeholder="例如: lohas_tea_01">
                         </div>
                         <div class="input-group">
@@ -257,7 +306,7 @@
                             </div>
                         </div>
                         <div class="input-group">
-                            <label>商品相片網址 (URL / 可留空使用預設圖)</label>
+                            <label>商品相片網址 (URL / 可留空)</label>
                             <input type="text" class="input-field" id="newProdImg" placeholder="https://...">
                         </div>
                         <button class="btn-core green" style="width:100%;" onclick="submitNewProduct()">💾 確認上架並發佈至全網</button>
@@ -319,7 +368,7 @@
                             <input type="text" class="input-field" id="confMerchantPhone" placeholder="加載中...">
                         </div>
                         <div class="input-group">
-                            <label>PayMe 收款碼二維碼圖片網址 (可放入 Base64)</label>
+                            <label>PayMe 收款碼二維碼圖片網址</label>
                             <input type="text" class="input-field" id="confPaymeQr" placeholder="加載中...">
                         </div>
                     </div>
@@ -351,9 +400,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-        // 與你的 LOHAS Store 完全共用同一套安全金鑰與專案群
         const firebaseConfig = {
             apiKey: "AIzaSyDnJJJmVSVGfTH92nDf51Ll9QoG1MKzTKM",
             authDomain: "lohas-care-store.firebaseapp.com",
@@ -367,15 +415,63 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 🔑 後台核心防禦密碼 (可自由更改)
+        const MASTER_ADMIN_PASSWORD = "LOHAS2026Admin";
+
         function adminToast(msg) {
             const t = document.getElementById("adminToast");
             t.innerText = msg; t.style.display = "block";
             setTimeout(() => t.style.display = "none", 2500);
         }
 
+        // 🔓 執行登入校驗
+        window.verifyAdminPassword = function() {
+            const inputField = document.getElementById("adminPasswordInput");
+            const errorMsg = document.getElementById("loginErrorMsg");
+            
+            if(inputField.value === MASTER_ADMIN_PASSWORD) {
+                errorMsg.style.display = "none";
+                // 將登入成功狀態記錄在當前分頁中 (重新整理不丟失)
+                sessionStorage.setItem("lohas_admin_auth", "authenticated");
+                unlockDashboardUI();
+            } else {
+                errorMsg.style.display = "block";
+                inputField.value = "";
+                inputField.focus();
+            }
+        };
+
+        // 🔓 顯示主介面並加載 Firebase 資料
+        function unlockDashboardUI() {
+            document.getElementById("adminLoginPanel").style.display = "none";
+            const dash = document.getElementById("adminMainDashboard");
+            dash.style.display = "flex";
+            
+            // 變更 Body 佈局適應後台大框架
+            document.body.style.alignItems = "flex-start";
+
+            // 啟動資料庫即時監聽與對接
+            initAdminSystem();
+        }
+
+        // 🔒 安全登出系統
+        window.logOutAdminSystem = function() {
+            sessionStorage.removeItem("lohas_admin_auth");
+            location.reload(); // 直接重新整理刷新網頁回復鎖定狀態
+        };
+
+        // 頁面初次載入安全自動校驗器
+        window.addEventListener("DOMContentLoaded", () => {
+            if(sessionStorage.getItem("lohas_admin_auth") === "authenticated") {
+                unlockDashboardUI();
+            } else {
+                document.getElementById("adminPasswordInput").focus();
+            }
+        });
+
         // 時鐘模組
         setInterval(() => {
-            document.getElementById("serverClock").innerText = "💻 控制台時間: " + new Date().toLocaleString('zh-HK');
+            document.getElementById("serverClock").innerText = "⏰ 系統時間: " + new Date().toLocaleString('zh-HK');
         }, 1000);
 
         // 分頁切換功能
@@ -409,7 +505,6 @@
                     return;
                 }
 
-                // 排序：最新的訂單置頂
                 let sortedDocs = [];
                 snapshot.forEach(doc => sortedDocs.push(doc));
                 sortedDocs.sort((a,b) => {
@@ -429,7 +524,6 @@
                     else if(o.status === "cancelled") statusBadge = `<span class="status-badge status-cancelled">已取消/失效</span>`;
                     else statusBadge = `<span class="status-badge" style="background:#E0E0E0;">${o.status}</span>`;
 
-                    // 處理入數紙縮圖
                     let receiptHtml = "⚠️ 未上傳";
                     if(o.receiptImgBase64 && o.receiptImgBase64.trim() !== "") {
                         receiptHtml = `<img src="${o.receiptImgBase64}" class="receipt-preview-thumbnail" onclick="openImgModal(this.src)" title='點擊放大核對'>`;
@@ -572,7 +666,7 @@
         };
 
         /* ==========================================
-           🎯 功能 4: 系統核心收銀台二維碼動態配置
+           🎯 功能 4: 系統配置初始化
            ========================================== */
         async function fetchSystemPaymentConfig() {
             try {
@@ -601,15 +695,13 @@
             } catch(e) { alert("儲存配置失敗: " + e.message); }
         };
 
-        // 系統啟動總入口
+        // 系統啟動總入口（解鎖成功後才會呼叫）
         function initAdminSystem() {
             listenToOrders();
             listenToProducts();
             listenToUsers();
             fetchSystemPaymentConfig();
         }
-
-        initAdminSystem();
     </script>
 </body>
 </html>
