@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOHAS Store 後台管理系統 (會員欄位優化版 v16.8)</title>
+    <title>LOHAS Store 後台管理系統 (WhatsApp對接版 v17.0)</title>
     <!-- 引入高解析度 HTML 轉 PDF 核心插件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -16,7 +16,7 @@
             --text-light: #666666;
             --white: #FFFFFF;
             --button-height: 48px;         /* 核心憲章指定：標準高點擊度按鈕高度 */
-            --accent-green: #2E7D32;       /* 成功提示色 */
+            --accent-green: #2E7D32;       /* 成功提示色 / WhatsApp綠 */
             --accent-blue: #0288D1;
         }
 
@@ -208,11 +208,13 @@
             background: rgba(0,0,0,0.7); z-index: 99999;
             display: none; justify-content: center; align-items: center; padding: 20px;
         }
+        
+        /* 📄 發票預覽外殼調整 */
         .invoice-modal-content {
             background: #90A4AE; padding: 15px; border-radius: 14px; max-width: 840px; width: 100%; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
         .invoice-scroll-body {
-            max-height: 75vh; overflow-y: auto; background: white; padding: 10px; border-radius: 8px; display: flex; justify-content: center;
+            max-height: 72vh; overflow-y: auto; background: white; padding: 10px; border-radius: 8px; display: flex; justify-content: center;
         }
 
         .invoice-print-container {
@@ -255,7 +257,7 @@
         <header class="admin-header">
             <div class="header-title">
                 <h1>LOHAS Store 實時決策中央後台</h1>
-                <span>核心完美修復版 v16.8</span>
+                <span>完整完美版 v17.0</span>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div id="serverClock" style="font-size: 13px; font-weight: bold; color: var(--secondary-color);">載入中...</div>
@@ -378,7 +380,7 @@
                 </div>
             </section>
 
-            <!-- 【第 3 分頁】：客人消費額、積分和等級（✨遵從指示全新升級改版版面） -->
+            <!-- 【第 3 分頁】：客人消費額、積分和等級 -->
             <section id="panel_users" class="panel-section">
                 <div class="card">
                     <div class="section-title">👥 全體登記會員大會計 (消費額 · 積分 · 會籍等級管理)</div>
@@ -388,8 +390,8 @@
                                 <tr>
                                     <th>會員卡號 (UID)</th>
                                     <th>姓名/暱稱</th>
-                                    <th style="color:#D32F2F; font-weight:bold; background:#FFEBEE;">最新訂單編號</th> <!-- ✨添加新欄位 -->
-                                    <th style="color:#D32F2F; font-weight:bold; background:#FFEBEE;">最新訂單日期</th> <!-- ✨添加新欄位 -->
+                                    <th style="color:#D32F2F; font-weight:bold; background:#FFEBEE;">最新訂單編號</th>
+                                    <th style="color:#D32F2F; font-weight:bold; background:#FFEBEE;">最新訂單日期</th>
                                     <th>現有會籍等級</th>
                                     <th>累積消費總額</th>
                                     <th>現有累積積分</th>
@@ -460,8 +462,11 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 📄 對齊參考檔案 image.png：操作底欄完美添加 WhatsApp 傳送功能鍵 -->
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="btn-core" style="background-color: #37474F;" onclick="closeInvoiceModal()">關閉預覽</button>
+                <button class="btn-core green" onclick="executeWhatsAppInvoiceSend()">💬 WhatsApp 傳送發票</button> <!-- ✨ 全新添加按鈕 -->
                 <button class="btn-core blue" onclick="executeDownloadPDF()">📥 確定下載 PDF 發票</button>
             </div>
         </div>
@@ -498,7 +503,7 @@
         const MASTER_ADMIN_PASSWORD = "LOHAS2026Admin";
         let globalOrdersCache = {}; 
         let currentPrintingOrderId = "";
-        let globalLatestUserOrderMap = {}; // 用於快取跨表追蹤：uid -> 最新訂單Object
+        let globalLatestUserOrderMap = {}; 
 
         function adminToast(msg) {
             const t = document.getElementById("adminToast");
@@ -565,10 +570,10 @@
                 const tbody = document.getElementById("adminOrdersTableBody");
                 tbody.innerHTML = "";
                 globalOrdersCache = {}; 
-                globalLatestUserOrderMap = {}; // 重置跨表快取
+                globalLatestUserOrderMap = {}; 
                 
                 if(snapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-light);">目前雲端資料庫查無任何交易記錄。</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-light);">目前雲端資料庫查無 any 交易記錄。</td></tr>`;
                     return;
                 }
 
@@ -581,7 +586,6 @@
                     const o = docSnap.data();
                     globalOrdersCache[orderId] = o; 
 
-                    // ✨ 核心交叉數據提取：記錄每位會員最新的一筆訂單資訊
                     if (o.uid && !globalLatestUserOrderMap[o.uid]) {
                         globalLatestUserOrderMap[o.uid] = {
                             orderId: orderId,
@@ -683,6 +687,38 @@
             document.getElementById("invoicePreviewModal").style.display = "none";
         };
 
+        // ✨ 全新添加：一鍵動態組裝並調用 WhatsApp 官方金流通道轉發發票
+        window.executeWhatsAppInvoiceSend = function() {
+            if(!currentPrintingOrderId) return;
+            const o = globalOrdersCache[currentPrintingOrderId];
+            if(!o) return;
+
+            let totalAmt = o.total || 0;
+            let addressStr = o.address || '到店自取';
+            let statusText = "待系統核對";
+            if(o.status === "verified_paid") statusText = "✓ 已核對確認入數";
+            else if(o.status === "cancelled") statusText = "已失效/取消";
+
+            const cloudReceiptUrl = `https://lohas-care-store.web.app/receipt.html?orderId=${currentPrintingOrderId}`;
+            
+            // 組裝正式商務文字排版
+            let waText = `*🔔 LOHAS STORE 官方發票憑證更新通知* \n`;
+            waText += `========================\n`;
+            waText += `• 發票編號：${currentPrintingOrderId}\n`;
+            waText += `• 實收總額：*HK$ ${totalAmt}*\n`;
+            waText += `• 付款管道：${o.paymentMethod || '線上過數'}\n`;
+            waText += `• 送貨目的地：_${addressStr}_\n`;
+            waText += `• 目前核對狀態：[${statusText}]\n\n`;
+            waText += `🔗 *點擊下方加密雲端連結，隨時查閱實時審核狀態及下載電子收據 PDF：*\n`;
+            waText += `${cloudReceiptUrl}`;
+
+            // 安全進行 URL 轉碼，防範萬國碼與符號截斷
+            const encodedText = encodeURIComponent(waText);
+            
+            adminToast("💬 正在調用 WhatsApp 通道...");
+            window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
+        };
+
         window.executeDownloadPDF = function() {
             if(!currentPrintingOrderId) return;
             const element = document.getElementById("invoicePrintTargetNode");
@@ -755,7 +791,7 @@
         };
 
         /* ==========================================
-           🎯 分頁 3: 客人消費額、積分和等級 (✨全新欄位優化渲染)
+           🎯 分頁 3: 客人消費額、積分和等級
            ========================================== */
         function listenToUsers() {
             onSnapshot(collection(db, "users"), (snapshot) => {
@@ -763,19 +799,14 @@
                 tbody.innerHTML = "";
                 snapshot.forEach(docSnap => {
                     const uid = docSnap.id; const u = docSnap.data();
-                    
-                    // ✨ 提取交叉關聯的最新訂單數據
                     let userLatestOrder = globalLatestUserOrderMap[uid] || { orderId: "無下單紀錄", dateStr: "-" };
 
                     tbody.innerHTML += `
                         <tr>
                             <td><code>${uid}</code></td>
                             <td><b>${u.name || '測試會員'}</b></td>
-                            <!-- ✨ 添加「訂單編號」一欄 -->
                             <td style="background:#FFF9C4; font-weight:500;"><code>${userLatestOrder.orderId}</code></td>
-                            <!-- ✨ 添加「訂單日期」一欄 -->
                             <td style="background:#FFF9C4; font-size:11px; color:var(--text-light);">${userLatestOrder.dateStr}</td>
-                            <!-- 🚫（取消手機號碼一欄已完美移除）-->
                             <td><span style="color:#FF7043; font-weight:bold;">${u.level || '普通會員'}</span></td>
                             <td style="font-weight: 500;">HK$ ${Number(u.totalSpent || 0).toLocaleString()}</td>
                             <td style="color:var(--accent-green); font-weight:bold;">${Number(u.points || 0).toLocaleString()} pts</td>
