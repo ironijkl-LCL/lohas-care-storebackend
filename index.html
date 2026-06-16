@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOHAS Store 後台管理系統 (會員架構升級版 v16.2)</title>
+    <title>LOHAS Store 後台管理系統 (會員欄位優化版 v16.8)</title>
+    <!-- 引入高解析度 HTML 轉 PDF 核心插件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* 全域樣式：嚴格遵從系統核心憲章（Core Constitution v2.3） */
@@ -66,7 +67,7 @@
         /* 💻 後台中央主容器 */
         .admin-container {
             width: 100%;
-            max-width: 1250px;
+            max-width: 1300px;
             margin: 0 auto;
             background-color: var(--bg-color);
             border-radius: 16px;
@@ -234,6 +235,7 @@
 
     <div class="toast-msg" id="adminToast">提示訊息</div>
 
+    <!-- 🔒 登入驗證介面面版 -->
     <div class="login-overlay" id="adminLoginPanel">
         <div class="login-logo">LOHAS CARE</div>
         <div class="login-subtitle">中央決策管理控制台認證安全鎖</div>
@@ -248,11 +250,12 @@
     </div>
 
 
+    <!-- 💻 後台中央主容器 -->
     <div class="admin-container" id="adminMainDashboard">
         <header class="admin-header">
             <div class="header-title">
                 <h1>LOHAS Store 實時決策中央後台</h1>
-                <span>結構優化版 v16.2</span>
+                <span>核心完美修復版 v16.8</span>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div id="serverClock" style="font-size: 13px; font-weight: bold; color: var(--secondary-color);">載入中...</div>
@@ -260,6 +263,7 @@
             </div>
         </header>
 
+        <!-- 📌 3 個主要分頁按鈕 -->
         <nav class="admin-tabs">
             <button class="tab-btn active" id="tab_orders" onclick="switchTab('panel_orders')">📋 1. 訂單編號</button>
             <button class="tab-btn" id="tab_products" onclick="switchTab('panel_products')">📦 2. 貨品存量</button>
@@ -268,6 +272,7 @@
 
         <main class="admin-content">
             
+            <!-- 【第 1 分頁】：訂單編號控制台 -->
             <section id="panel_orders" class="panel-section active">
                 <div class="card">
                     <div class="section-title">
@@ -294,6 +299,7 @@
                     </div>
                 </div>
 
+                <!-- ⚙️ 收款金流配置卡 -->
                 <div class="card">
                     <div class="section-title">🛠️ 線上收銀台收款資訊配置 (`system_config/payment`)</div>
                     <div class="grid-2">
@@ -320,6 +326,7 @@
                 </div>
             </section>
 
+            <!-- 【第 2 分頁】：貨品存量與補貨管理 -->
             <section id="panel_products" class="panel-section">
                 <div class="grid-2">
                     <div class="card">
@@ -371,6 +378,7 @@
                 </div>
             </section>
 
+            <!-- 【第 3 分頁】：客人消費額、積分和等級（✨遵從指示全新升級改版版面） -->
             <section id="panel_users" class="panel-section">
                 <div class="card">
                     <div class="section-title">👥 全體登記會員大會計 (消費額 · 積分 · 會籍等級管理)</div>
@@ -378,9 +386,10 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>訂單編號 / 登記序號</th> <th>會員卡號 (UID)</th>
+                                    <th>會員卡號 (UID)</th>
                                     <th>姓名/暱稱</th>
-                                    <th>手機號碼</th>
+                                    <th style="color:#D32F2F; font-weight:bold; background:#FFEBEE;">最新訂單編號</th> <!-- ✨添加新欄位 -->
+                                    <th style="color:#D32F2F; font-weight:bold; background:#FFEBEE;">最新訂單日期</th> <!-- ✨添加新欄位 -->
                                     <th>現有會籍等級</th>
                                     <th>累積消費總額</th>
                                     <th>現有累積積分</th>
@@ -389,7 +398,7 @@
                                 </tr>
                             </thead>
                             <tbody id="adminUsersTableBody">
-                                <tr><td colspan="9" style="text-align:center;">正在載入會員核心權益檔案...</td></tr>
+                                <tr><td colspan="9" style="text-align:center;">正在載入會員與關聯訂單核心檔案...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -398,6 +407,7 @@
         </main>
     </div>
 
+    <!-- 🔍 發票雙層驗證預覽大視窗 -->
     <div class="admin-modal" id="invoicePreviewModal" style="align-items: center;">
         <div class="invoice-modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; color: white;">
@@ -457,6 +467,7 @@
         </div>
     </div>
 
+    <!-- 圖片大型檢視視窗 -->
     <div class="admin-modal" id="imgModal" onclick="closeImgModal()">
         <div class="admin-modal-content" onclick="event.stopPropagation()">
             <h3 style="margin-bottom: 10px;">📸 客戶付款入數紙原圖預覽</h3>
@@ -466,9 +477,10 @@
         </div>
     </div>
 
+    <!-- Firebase 模組化 SDK 對接程式碼 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDnJJJmVSVGfTH92nDf51Ll9QoG1MKzTKM",
@@ -486,6 +498,7 @@
         const MASTER_ADMIN_PASSWORD = "LOHAS2026Admin";
         let globalOrdersCache = {}; 
         let currentPrintingOrderId = "";
+        let globalLatestUserOrderMap = {}; // 用於快取跨表追蹤：uid -> 最新訂單Object
 
         function adminToast(msg) {
             const t = document.getElementById("adminToast");
@@ -552,9 +565,10 @@
                 const tbody = document.getElementById("adminOrdersTableBody");
                 tbody.innerHTML = "";
                 globalOrdersCache = {}; 
+                globalLatestUserOrderMap = {}; // 重置跨表快取
                 
                 if(snapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-light);">目前雲端資料庫查無 any 交易記錄。</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-light);">目前雲端資料庫查無任何交易記錄。</td></tr>`;
                     return;
                 }
 
@@ -566,6 +580,14 @@
                     const orderId = docSnap.id;
                     const o = docSnap.data();
                     globalOrdersCache[orderId] = o; 
+
+                    // ✨ 核心交叉數據提取：記錄每位會員最新的一筆訂單資訊
+                    if (o.uid && !globalLatestUserOrderMap[o.uid]) {
+                        globalLatestUserOrderMap[o.uid] = {
+                            orderId: orderId,
+                            dateStr: o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleString('zh-HK') : '未知時間'
+                        };
+                    }
 
                     let timeStr = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleString('zh-HK') : '未知時間';
                     
@@ -612,7 +634,7 @@
         };
 
         window.deleteTestOrder = async function(orderId) {
-            if(!confirm(`確定要從資料庫中永久刪除訂單 [${orderId}] 嗎？此操作不可逆。`)) return;
+            if(!confirm(`確定要從資料庫中永久刪除訂單 [${orderId}] 嗎？`)) return;
             try {
                 await deleteDoc(doc(db, "orders", orderId));
                 adminToast(`✓ 測試訂單已成功移除！`);
@@ -733,38 +755,27 @@
         };
 
         /* ==========================================
-           🎯 分頁 3: 客人消費額、積分和等級 (自動關聯訂單編號)
+           🎯 分頁 3: 客人消費額、積分和等級 (✨全新欄位優化渲染)
            ========================================== */
         function listenToUsers() {
-            onSnapshot(collection(db, "users"), async (userSnapshot) => {
+            onSnapshot(collection(db, "users"), (snapshot) => {
                 const tbody = document.getElementById("adminUsersTableBody");
                 tbody.innerHTML = "";
-                
-                // 為了獲取最新關聯訂單編號，拉取一次現有 orders 映射快照
-                let userLatestOrderMap = {};
-                try {
-                    const orderSnaps = await getDocs(collection(db, "orders"));
-                    orderSnaps.forEach(oDoc => {
-                        const oData = oDoc.data();
-                        if(oData.uid) {
-                            // 保持關聯到該會員最新創立的一筆訂單
-                            userLatestOrderMap[oData.uid] = oDoc.id;
-                        }
-                    });
-                } catch(e) { console.warn("關聯訂單加載失敗:", e); }
-
-                userSnapshot.forEach(docSnap => {
-                    const uid = docSnap.id; 
-                    const u = docSnap.data();
+                snapshot.forEach(docSnap => {
+                    const uid = docSnap.id; const u = docSnap.data();
                     
-                    // ✨ 核心渲染：若查到該會員有下單歷史，則顯示訂單號；無則顯示「登記會員/無下單」
-                    let associatedOrderId = userLatestOrderMap[uid] || `<span style="color:var(--text-light); font-style:italic;">登記會員 (暫無下單)</span>`;
+                    // ✨ 提取交叉關聯的最新訂單數據
+                    let userLatestOrder = globalLatestUserOrderMap[uid] || { orderId: "無下單紀錄", dateStr: "-" };
 
                     tbody.innerHTML += `
                         <tr>
-                            <td><code style="font-weight:bold; color:#E65100;">${associatedOrderId}</code></td> <td><code>${uid}</code></td>
+                            <td><code>${uid}</code></td>
                             <td><b>${u.name || '測試會員'}</b></td>
-                            <td>${u.phone || '-'}</td>
+                            <!-- ✨ 添加「訂單編號」一欄 -->
+                            <td style="background:#FFF9C4; font-weight:500;"><code>${userLatestOrder.orderId}</code></td>
+                            <!-- ✨ 添加「訂單日期」一欄 -->
+                            <td style="background:#FFF9C4; font-size:11px; color:var(--text-light);">${userLatestOrder.dateStr}</td>
+                            <!-- 🚫（取消手機號碼一欄已完美移除）-->
                             <td><span style="color:#FF7043; font-weight:bold;">${u.level || '普通會員'}</span></td>
                             <td style="font-weight: 500;">HK$ ${Number(u.totalSpent || 0).toLocaleString()}</td>
                             <td style="color:var(--accent-green); font-weight:bold;">${Number(u.points || 0).toLocaleString()} pts</td>
@@ -800,7 +811,7 @@
         };
 
         /* ==========================================
-           ⚙️ 收款渠道金流底層配置提取
+           ⚙️ 收款渠道金流配置
            ========================================== */
         async function fetchSystemPaymentConfig() {
             try {
